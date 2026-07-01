@@ -283,6 +283,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
 
         menu.addItem(NSMenuItem.separator())
+        menu.addItem(colorSubmenu())
+        menu.addItem(themeSubmenu())
+        menu.addItem(NSMenuItem.separator())
         menu.addItem(action("Refresh now", #selector(doRefresh)))
         menu.addItem(action("Reset new-device baseline", #selector(doReset)))
         menu.addItem(action("Reveal data folder", #selector(doReveal)))
@@ -316,6 +319,84 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func doRefresh() { refresh() }
     @objc private func doReset() { scanQueue.async { self.engine.resetBaseline(); let s = self.engine.scan(); DispatchQueue.main.async { self.apply(s) } } }
     @objc private func doReveal() { NSWorkspace.shared.selectFile(engine.ouiPath, inFileViewerRootedAtPath: engine.supportPath) }
+
+    // MARK: - In-menu color / theme picker (writes ~/.claude/statusbar/radar-theme.json)
+
+    private let iconColors: [(String, String)] = [
+        ("Зелёный", "46"), ("Аква", "51"), ("Розовый", "201"), ("Оранжевый", "214"),
+        ("Жёлтый", "226"), ("Красный", "196"), ("Синий", "39"), ("Фиолетовый", "129"), ("Монохром", "")
+    ]
+
+    private func colorSubmenu() -> NSMenuItem {
+        let item = NSMenuItem(title: "Цвет значка", action: nil, keyEquivalent: "")
+        let sub = NSMenu()
+        let cur = currentSpec("menubar")
+        for (name, spec) in iconColors {
+            let mi = NSMenuItem(title: name, action: #selector(pickIconColor(_:)), keyEquivalent: "")
+            mi.target = self
+            mi.representedObject = spec
+            if cur == spec { mi.state = .on }
+            sub.addItem(mi)
+        }
+        item.submenu = sub
+        return item
+    }
+
+    private func themeSubmenu() -> NSMenuItem {
+        let item = NSMenuItem(title: "Тема радара", action: nil, keyEquivalent: "")
+        let sub = NSMenu()
+        for name in ["Неон", "Классика", "Монохром"] {
+            let mi = NSMenuItem(title: name, action: #selector(pickPreset(_:)), keyEquivalent: "")
+            mi.target = self
+            mi.representedObject = name
+            sub.addItem(mi)
+        }
+        item.submenu = sub
+        return item
+    }
+
+    @objc private func pickIconColor(_ sender: NSMenuItem) {
+        writeThemeKey("menubar", (sender.representedObject as? String) ?? "")
+        refresh()
+    }
+
+    @objc private func pickPreset(_ sender: NSMenuItem) {
+        let name = (sender.representedObject as? String) ?? ""
+        let presets: [String: [String: String]] = [
+            "Неон": ["radar_label": "51", "sweep": "201", "lan": "46", "new": "196", "inbound": "214",
+                     "context_low": "46", "context_mid": "220", "context_high": "196", "menubar": "46"],
+            "Классика": ["radar_label": "cyan", "sweep": "cyan", "lan": "green", "new": "red", "inbound": "yellow",
+                         "context_low": "green", "context_mid": "yellow", "context_high": "red", "menubar": "green"],
+            "Монохром": ["radar_label": "white", "sweep": "gray", "lan": "white", "new": "white", "inbound": "gray",
+                         "context_low": "white", "context_mid": "gray", "context_high": "white"]
+        ]
+        if let p = presets[name] { saveTheme(p as [String: Any]); refresh() }
+    }
+
+    private func themeURL() -> URL {
+        FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".claude/statusbar/radar-theme.json")
+    }
+    private func currentSpec(_ key: String) -> String {
+        guard let data = try? Data(contentsOf: themeURL()),
+              let o = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return "" }
+        if let s = o[key] as? String { return s }
+        if let n = o[key] as? NSNumber { return n.stringValue }
+        return ""
+    }
+    private func writeThemeKey(_ key: String, _ value: String) {
+        var o: [String: Any] = [:]
+        if let data = try? Data(contentsOf: themeURL()),
+           let cur = try? JSONSerialization.jsonObject(with: data) as? [String: Any] { o = cur }
+        if value.isEmpty { o.removeValue(forKey: key) } else { o[key] = value }
+        saveTheme(o)
+    }
+    private func saveTheme(_ o: [String: Any]) {
+        let dir = themeURL().deletingLastPathComponent()
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        if let data = try? JSONSerialization.data(withJSONObject: o, options: [.prettyPrinted, .sortedKeys]) {
+            try? data.write(to: themeURL())
+        }
+    }
 }
 
 // MARK: - Entry

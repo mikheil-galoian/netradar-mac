@@ -207,8 +207,55 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func apply(_ snap: Snapshot) {
         last = snap
         guard let button = statusItem.button else { return }
-        button.title = " \(snap.devices.count)" + (snap.newCount > 0 ? "!" : "")
-        button.contentTintColor = snap.newCount > 0 ? .systemRed : nil
+        let hasNew = snap.newCount > 0
+        let title = " \(snap.devices.count)" + (hasNew ? "!" : "")
+        // themed tint: "new" color on alert, optional "menubar" color otherwise (nil = default monochrome)
+        let tint = hasNew ? (color(themeSpec("new")) ?? .systemRed) : color(themeSpec("menubar"))
+        button.image?.isTemplate = true
+        button.contentTintColor = tint
+        button.attributedTitle = NSAttributedString(string: title, attributes: tint != nil ? [.foregroundColor: tint!] : [:])
+    }
+
+    // Read a color value from ~/.claude/statusbar/radar-theme.json (same file as the statusline)
+    private func themeSpec(_ key: String) -> String? {
+        let url = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".claude/statusbar/radar-theme.json")
+        guard let data = try? Data(contentsOf: url),
+              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let v = obj[key] else { return nil }
+        if let s = v as? String { return s }
+        if let n = v as? NSNumber { return n.stringValue }
+        return nil
+    }
+
+    private func color(_ spec: String?) -> NSColor? {
+        guard let spec = spec, !spec.isEmpty else { return nil }
+        if let n = Int(spec) { return Self.xterm256(n) }
+        switch spec {
+        case "red", "bred": return .systemRed
+        case "green", "bgreen": return .systemGreen
+        case "yellow", "byellow": return .systemYellow
+        case "blue", "bblue": return .systemBlue
+        case "magenta", "bmagenta": return .systemPurple
+        case "cyan", "bcyan": return .systemTeal
+        case "white", "bwhite": return .white
+        case "gray", "grey": return .systemGray
+        case "black": return .black
+        default: return nil
+        }
+    }
+
+    // xterm 256-color palette -> NSColor
+    private static func xterm256(_ raw: Int) -> NSColor {
+        let i = max(0, min(255, raw))
+        func c(_ v: Int) -> CGFloat { CGFloat(v) / 255.0 }
+        if i < 16 {
+            let base = [(0,0,0),(205,0,0),(0,205,0),(205,205,0),(0,0,238),(205,0,205),(0,205,205),(229,229,229),
+                        (127,127,127),(255,0,0),(0,255,0),(255,255,0),(92,92,255),(255,0,255),(0,255,255),(255,255,255)]
+            let (r,g,b) = base[i]; return NSColor(srgbRed: c(r), green: c(g), blue: c(b), alpha: 1)
+        }
+        if i >= 232 { let v = 8 + (i - 232) * 10; return NSColor(srgbRed: c(v), green: c(v), blue: c(v), alpha: 1) }
+        let j = i - 16, steps = [0,95,135,175,215,255]
+        return NSColor(srgbRed: c(steps[(j / 36) % 6]), green: c(steps[(j / 6) % 6]), blue: c(steps[j % 6]), alpha: 1)
     }
 
     // Rebuild the dropdown each time it opens, from the latest snapshot.

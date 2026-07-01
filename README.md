@@ -1,4 +1,4 @@
-# NetRadar
+# NetRadar — for Claude Code & macOS
 
 **A network radar for Claude Code and the macOS menu bar.** See who is on your
 network at a glance — device count, new-device alerts, and inbound connections —

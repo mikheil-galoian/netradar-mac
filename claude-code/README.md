@@ -12,6 +12,24 @@ CONTEXT: ●◦◦◦◦◦◦◦◦◦◦◦◦◦◦◦◦◦◦◦ 6%  ·  RA
 - `NEW k` — devices not in the baseline snapshot (red)
 - `IN k` — inbound connections to your Mac (yellow)
 
+## Colors
+
+Every color is themeable via `~/.claude/statusbar/radar-theme.json` (copy
+`radar-theme.json` there). Values are color names
+(`red green yellow blue magenta cyan white gray`, `b`-prefixed for bright) or a
+256-color number `0`–`255`:
+
+```json
+{
+  "radar_label": "cyan", "sweep": "cyan",
+  "lan": "green", "new": "red", "inbound": "yellow",
+  "context_low": "green", "context_mid": "214", "context_high": "197"
+}
+```
+
+Missing file or keys fall back to the defaults above. Changes apply on the next
+statusline render.
+
 ## Files
 
 | File | Role |

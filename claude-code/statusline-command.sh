@@ -32,6 +32,9 @@ C_IN=$(ansi "$(tget inbound yellow)")
 CTX_LOW=$(ansi "$(tget context_low green)")
 CTX_MID=$(ansi "$(tget context_mid yellow)")
 CTX_HIGH=$(ansi "$(tget context_high red)")
+C_CTXLABEL=$(ansi "$(tget context_label cyan)")
+C_MODEL=$(ansi "$(tget model 111)")
+C_DIR=$(ansi "$(tget dir 141)")
 
 # --- network radar segment (from net.json, written by netradar.js daemon) ---
 radar=""
@@ -79,7 +82,7 @@ if [ -n "$used" ]; then
     i=$((i + 1))
   done
 
-  printf "${B}CONTEXT:${X} %b ${zone}%s%%${X}%b ${DIM}\302\267${X} %s ${DIM}\302\267${X} %s" "$bar" "$used_int" "$radar" "$model" "$dir"
+  printf "${C_CTXLABEL}${B}CONTEXT:${X} %b ${zone}%s%%${X}%b ${DIM}\302\267${X} ${zone}%s${X} ${DIM}\302\267${X} ${C_DIR}%s${X}" "$bar" "$used_int" "$radar" "$model" "$dir"
 else
-  printf "%s \302\267 %s%b" "$model" "$dir" "$radar"
+  printf "${C_MODEL}%s${X} \302\267 ${C_DIR}%s${X}%b" "$model" "$dir" "$radar"
 fi

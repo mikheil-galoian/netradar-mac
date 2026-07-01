@@ -8,6 +8,7 @@ struct Device {
     let mac: String
     let vendor: String
     let host: String
+    let isNew: Bool   // true = not in the known-devices baseline (a stranger)
 }
 
 struct Conn {
@@ -125,22 +126,29 @@ final class ScanEngine {
     func scan() -> Snapshot {
         var budget = maxLookupsPerCycle
 
-        // LAN devices
-        var devices: [Device] = []
+        // gather raw LAN entries first (need the baseline before tagging known/new)
+        var raw: [(ip: String, mac: String)] = []
         var macs = Set<String>()
         for row in captures("\\(([0-9.]+)\\)\\s+at\\s+([0-9a-f:]+)", run("/usr/sbin/arp", ["-an"])) {
             let ip = row[1]
             let mac = normMac(row[2])
             if ip.hasPrefix("224.") || ip.hasPrefix("239.") || ip.hasPrefix("255.") || ip.hasSuffix(".255") { continue }
-            if isNonUnicast(mac) { continue }
+            if isNonUnicast(mac) || macs.contains(mac) { continue }
             macs.insert(mac)
-            devices.append(Device(ip: ip, mac: mac, vendor: vendor(mac), host: rdns(ip, budget: &budget)))
+            raw.append((ip, mac))
         }
 
-        // NEW devices vs baseline (first run seeds baseline)
+        // NEW devices vs baseline (first run seeds baseline from everything present)
         var base = loadBaseline()
         if base.isEmpty { base = macs; saveBaseline(macs) }
         let newCount = macs.subtracting(base).count
+
+        // build devices, tagging each as known (green) or stranger (red)
+        var devices: [Device] = []
+        for r in raw {
+            devices.append(Device(ip: r.ip, mac: r.mac, vendor: vendor(r.mac),
+                                  host: rdns(r.ip, budget: &budget), isNew: !base.contains(r.mac)))
+        }
 
         // Externally-reachable listening ports
         var listen = Set<String>()
@@ -212,11 +220,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // status color: GREEN = every device is known (ours), RED = a new/unknown device joined.
         // non-template palette symbol — the menu bar honors this color (it ignores tint on template icons).
         let tint: NSColor = hasNew ? .systemRed : .systemGreen
-        let base = NSImage(systemSymbolName: "dot.radiowaves.left.and.right", accessibilityDescription: "NetRadar")
-        let img = base?.withSymbolConfiguration(NSImage.SymbolConfiguration(paletteColors: [tint]))
-        img?.isTemplate = false
-        button.image = img
-        button.contentTintColor = tint
+        let cfg = NSImage.SymbolConfiguration(pointSize: 15, weight: .regular)
+        let base = NSImage(systemSymbolName: "dot.radiowaves.left.and.right", accessibilityDescription: "NetRadar")?
+            .withSymbolConfiguration(cfg)
+        button.image = base.map { Self.tinted($0, tint) }
+        button.contentTintColor = nil
         button.attributedTitle = NSAttributedString(string: title, attributes: [.foregroundColor: tint])
     }
 
@@ -275,7 +283,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         for d in last.devices {
             let name = d.host.isEmpty ? (d.vendor.isEmpty ? d.ip : d.vendor) : d.host
             let sub = [d.vendor, d.mac].filter { !$0.isEmpty }.joined(separator: " · ")
-            menu.addItem(disabled("  \(d.ip)   \(name)\(sub.isEmpty ? "" : "   — \(sub)")"))
+            // green = known device (ours), red = stranger (not in baseline)
+            menu.addItem(coloredRow("  \(d.ip)   \(name)\(sub.isEmpty ? "" : "   — \(sub)")",
+                                    d.isNew ? .systemRed : .systemGreen))
         }
 
         menu.addItem(NSMenuItem.separator())
@@ -312,6 +322,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         ])
         item.isEnabled = false
         return item
+    }
+    private func coloredRow(_ s: String, _ color: NSColor) -> NSMenuItem {
+        let item = NSMenuItem(title: s, action: nil, keyEquivalent: "")
+        item.attributedTitle = NSAttributedString(string: s, attributes: [
+            .font: NSFont.monospacedSystemFont(ofSize: NSFont.smallSystemFontSize, weight: .regular),
+            .foregroundColor: color
+        ])
+        item.isEnabled = false
+        return item
+    }
+
+    // Bake the color into the bitmap so the menu bar shows it (it ignores tint on template icons).
+    private static func tinted(_ image: NSImage, _ color: NSColor) -> NSImage {
+        let out = NSImage(size: image.size, flipped: false) { rect in
+            image.draw(in: rect)
+            color.set()
+            rect.fill(using: .sourceAtop)
+            return true
+        }
+        out.isTemplate = false
+        return out
     }
     private func action(_ title: String, _ sel: Selector) -> NSMenuItem {
         let item = NSMenuItem(title: title, action: sel, keyEquivalent: "")

@@ -209,11 +209,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         guard let button = statusItem.button else { return }
         let hasNew = snap.newCount > 0
         let title = " \(snap.devices.count)" + (hasNew ? "!" : "")
-        // themed tint: "new" color on alert, optional "menubar" color otherwise (nil = default monochrome)
-        let tint = hasNew ? (color(themeSpec("new")) ?? .systemRed) : color(themeSpec("menubar"))
-        button.image?.isTemplate = true
+        // status color: GREEN = every device is known (ours), RED = a new/unknown device joined.
+        // non-template palette symbol — the menu bar honors this color (it ignores tint on template icons).
+        let tint: NSColor = hasNew ? .systemRed : .systemGreen
+        let base = NSImage(systemSymbolName: "dot.radiowaves.left.and.right", accessibilityDescription: "NetRadar")
+        let img = base?.withSymbolConfiguration(NSImage.SymbolConfiguration(paletteColors: [tint]))
+        img?.isTemplate = false
+        button.image = img
         button.contentTintColor = tint
-        button.attributedTitle = NSAttributedString(string: title, attributes: tint != nil ? [.foregroundColor: tint!] : [:])
+        button.attributedTitle = NSAttributedString(string: title, attributes: [.foregroundColor: tint])
     }
 
     // Read a color value from ~/.claude/statusbar/radar-theme.json (same file as the statusline)
@@ -283,7 +287,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
 
         menu.addItem(NSMenuItem.separator())
-        menu.addItem(colorSubmenu())
         menu.addItem(themeSubmenu())
         menu.addItem(NSMenuItem.separator())
         menu.addItem(action("Refresh now", #selector(doRefresh)))

@@ -1,12 +1,21 @@
 # NetRadar
 
-A tiny macOS **menu-bar radar** for your network. It lives in the top bar and
-shows, at a glance, how many devices are on your LAN, whether a **new** device
-just appeared, and how many **inbound** connections your Mac has — click it for
-the full list of devices and live connections with reverse-DNS.
+**A network radar for Claude Code and the macOS menu bar.** See who is on your
+network at a glance — device count, new-device alerts, and inbound connections —
+right where you already look: the **Claude Code** statusline (bottom) and the
+**macOS** menu bar (top, *for Mac*).
 
-Self-contained native Swift/AppKit. No background daemon, no Node, no external
-services. It only reads your own subnet via the standard `arp` and `lsof` tools.
+Two parts — use either or both:
+
+- **Claude Code integration** (`claude-code/`) — a
+  `CONTEXT: … · RADAR ◐ LAN · NEW · IN` segment in your Claude Code statusline,
+  plus a `netradar` command for the full "who / from where" table. See
+  [claude-code/README.md](claude-code/README.md).
+- **macOS menu-bar app** (`NetRadar.app`) — a self-contained native Swift/AppKit
+  app showing the same radar in the top menu bar. Build instructions below.
+
+Both read only your own subnet via the standard `arp`/`lsof` tools. No external
+services.
 
 ## Menu bar
 

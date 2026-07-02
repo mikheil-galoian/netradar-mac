@@ -165,6 +165,8 @@ function alreadyRunning() {
 }
 
 function start() {
+  // write net.json synchronously first, so the radar shows on the very first statusline render (no warm-up lag)
+  try { fs.mkdirSync(dir, { recursive: true }); tick({ empty: 0 }); } catch {}
   if (alreadyRunning()) return;
   const child = cp.spawn(NODE, [SELF, "daemon"], { detached: true, stdio: "ignore" });
   child.unref();

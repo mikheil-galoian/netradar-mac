@@ -75,7 +75,7 @@ if [ -n "$used" ]; then
   i=0
   while [ "$i" -lt "$segments" ]; do
     if [ "$i" -eq "$fill" ]; then
-      bar="${bar}${zone}${CTXG}${X}"          # ● cursor
+      bar="${bar}${zone}\342\227\217${X}"      # ● filled cursor
     elif [ "$i" -eq "$orange_at" ]; then
       bar="${bar}${CTX_MID}${CTXG}${X}"        # ◦ mid threshold
     elif [ "$i" -eq "$red_at" ]; then

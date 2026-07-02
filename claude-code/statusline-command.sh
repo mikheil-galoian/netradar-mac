@@ -71,13 +71,13 @@ if [ -n "$used" ]; then
   i=0
   while [ "$i" -lt "$segments" ]; do
     if [ "$i" -eq "$fill" ]; then
-      bar="${bar}${zone}\342\227\217${X}"          # ● cursor
+      bar="${bar}${zone}\363\260\206\274${X}"          # ● cursor
     elif [ "$i" -eq "$orange_at" ]; then
-      bar="${bar}${CTX_MID}\342\227\213${X}"        # ◦ mid threshold
+      bar="${bar}${CTX_MID}\363\260\206\274${X}"        # ◦ mid threshold
     elif [ "$i" -eq "$red_at" ]; then
-      bar="${bar}${CTX_HIGH}\342\227\213${X}"       # ◦ high threshold
+      bar="${bar}${CTX_HIGH}\363\260\206\274${X}"       # ◦ high threshold
     else
-      bar="${bar}${DIM}\342\227\213${X}"            # ◦ dim
+      bar="${bar}${DIM}\363\260\206\274${X}"            # ◦ dim
     fi
     i=$((i + 1))
   done

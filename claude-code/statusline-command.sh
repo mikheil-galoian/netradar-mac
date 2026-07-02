@@ -73,11 +73,11 @@ if [ -n "$used" ]; then
     if [ "$i" -eq "$fill" ]; then
       bar="${bar}${zone}\342\227\217${X}"          # ● cursor
     elif [ "$i" -eq "$orange_at" ]; then
-      bar="${bar}${CTX_MID}\342\227\246${X}"        # ◦ mid threshold
+      bar="${bar}${CTX_MID}\342\227\213${X}"        # ◦ mid threshold
     elif [ "$i" -eq "$red_at" ]; then
-      bar="${bar}${CTX_HIGH}\342\227\246${X}"       # ◦ high threshold
+      bar="${bar}${CTX_HIGH}\342\227\213${X}"       # ◦ high threshold
     else
-      bar="${bar}${DIM}\342\227\246${X}"            # ◦ dim
+      bar="${bar}${DIM}\342\227\213${X}"            # ◦ dim
     fi
     i=$((i + 1))
   done

@@ -35,6 +35,10 @@ CTX_HIGH=$(ansi "$(tget context_high red)")
 C_CTXLABEL=$(ansi "$(tget context_label cyan)")
 C_MODEL=$(ansi "$(tget model 111)")
 C_DIR=$(ansi "$(tget dir 141)")
+# глиф ячейки шкалы: берётся из radar-theme.json "context_glyph" (вставь свой символ),
+# по умолчанию ○ (рисуется в любом шрифте)
+CTXG=$(tget context_glyph "")
+[ -z "$CTXG" ] && CTXG=$(printf '\342\227\213')
 
 # --- network radar segment (from net.json, written by netradar.js daemon) ---
 radar=""
@@ -71,13 +75,13 @@ if [ -n "$used" ]; then
   i=0
   while [ "$i" -lt "$segments" ]; do
     if [ "$i" -eq "$fill" ]; then
-      bar="${bar}${zone}\363\260\206\274${X}"          # ● cursor
+      bar="${bar}${zone}${CTXG}${X}"          # ● cursor
     elif [ "$i" -eq "$orange_at" ]; then
-      bar="${bar}${CTX_MID}\363\260\206\274${X}"        # ◦ mid threshold
+      bar="${bar}${CTX_MID}${CTXG}${X}"        # ◦ mid threshold
     elif [ "$i" -eq "$red_at" ]; then
-      bar="${bar}${CTX_HIGH}\363\260\206\274${X}"       # ◦ high threshold
+      bar="${bar}${CTX_HIGH}${CTXG}${X}"       # ◦ high threshold
     else
-      bar="${bar}${DIM}\363\260\206\274${X}"            # ◦ dim
+      bar="${bar}${DIM}${CTXG}${X}"            # ◦ dim
     fi
     i=$((i + 1))
   done

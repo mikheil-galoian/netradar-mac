@@ -1,2 +1,12 @@
-{ "radar_label":"cyan","sweep":"cyan","lan":"green","new":"red","inbound":"yellow",
-  "context_low":"green","context_mid":"yellow","context_high":"red" }
+{
+  "context_high": "196",
+  "context_low": "46",
+  "context_mid": "220",
+  "inbound": "214",
+  "lan": "46",
+  "menubar": "46",
+  "new": "196",
+  "radar_label": "51",
+  "sweep": "201",
+  "context_glyph": ""
+}

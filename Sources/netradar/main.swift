@@ -53,7 +53,9 @@ final class ScanEngine {
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir
     }()
-    private lazy var baselineURL = support.appendingPathComponent("baseline.json")
+    // shared with the Claude Code statusline daemon so NEW/known stays in sync (top == bottom)
+    private lazy var baselineURL = FileManager.default.homeDirectoryForCurrentUser
+        .appendingPathComponent(".claude/statusbar/net-baseline.json")
     private lazy var ouiURL = support.appendingPathComponent("oui.txt")
 
     private var baseline: Set<String>? = nil
